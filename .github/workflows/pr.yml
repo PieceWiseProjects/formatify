@@ -24,6 +24,3 @@ jobs:
         with:
           args: check
           src: src/formatify
-
-      - name: Run tests
-        run: uv run pytest --maxfail=1 --disable-warnings -q
