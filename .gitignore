@@ -175,3 +175,4 @@ cython_debug/
 .idea
 .venv
 __pycache__
+.xml
