@@ -9,18 +9,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install uv & Python
+      - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
-          python-version: '3.x'
           enable-cache: true
 
       - name: Sync dependencies
-        run: |
-          uv sync --locked --all-extras --dev
+        run: uv sync --locked --all-extras --dev
 
       - name: Lint with Ruff
         uses: astral-sh/ruff-action@v3
@@ -29,5 +26,4 @@ jobs:
           src: src/formatify
 
       - name: Run tests
-        run: |
-          uv run pytest --maxfail=1 --disable-warnings -q
+        run: uv run pytest --maxfail=1 --disable-warnings -q
