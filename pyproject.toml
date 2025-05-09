@@ -29,3 +29,7 @@ build-backend = "setuptools.build_meta"
 line-length = 88
 select      = ["E", "F", "W", "C90"]
 fix         = true
+
+[tool.ruff.mccabe]
+# allow up to 30 McCabe complexity (raise from the default 10)
+max-complexity = 30
