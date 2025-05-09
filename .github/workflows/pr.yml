@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.10, 3.11, 3.12]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv & Python
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+
+      - name: Sync dependencies
+        run: uv sync --locked --all-extras --dev
+
+      - name: Lint with Ruff
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: check
+          src: src/formatify
+
+      - name: Run tests
+        run: uv run pytest --maxfail=1 --disable-warnings -q
