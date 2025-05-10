@@ -175,4 +175,9 @@ cython_debug/
 .idea
 .venv
 __pycache__
-.xml
+*.xml
+*.egg-info
+aws
+*.egg
+.iml
+

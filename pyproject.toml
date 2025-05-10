@@ -1,14 +1,27 @@
 [project]
 name = "formatify"
 version = "1.0.0"
-description = "Library to infer and standardize datetime formats from timestamp samples."
+description = "Auto-detect and standardize datetime formats from raw timestamps"
+keywords = ["timestamp", "datetime", "standardization", "parsing"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
 readme = "README.md"
 authors = [
   { name = "AR", email = "roy.aalekh@gmail.com" }
 ]
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
+
 requires-python = ">=3.9"
-dependencies = []
+dependencies = [
+    "pytest>=8.3.5",
+    "rich>=14.0.0",
+]
 
 [project.optional-dependencies]
 dev = [
