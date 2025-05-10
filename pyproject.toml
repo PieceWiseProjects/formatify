@@ -1,6 +1,6 @@
 [project]
 name = "formatify_py"
-version = "1.0.0"
+version = "1.0.1"
 description = "Auto-detect and standardize datetime formats from raw timestamps"
 keywords = ["timestamp", "datetime", "standardization", "parsing"]
 classifiers = [
@@ -19,7 +19,6 @@ license-files = ["LICENSE"]
 requires-python = ">=3.9"
 dependencies = [
     "pytest>=8.3.5",
-    "rich>=14.0.0",
 ]
 
 [project.optional-dependencies]
