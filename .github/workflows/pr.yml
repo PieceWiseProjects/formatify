@@ -27,7 +27,7 @@ jobs:
       - name: Lint with Ruff
         uses: astral-sh/ruff-action@v3
         with:
-          args: check src/formatify
+          args: check src/formatify_py
 
       - name: Run tests with pytest
         run: uv run pytest --tb=short --disable-warnings
