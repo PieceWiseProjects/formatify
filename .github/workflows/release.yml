@@ -13,24 +13,35 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
 
       - name: Sync dependencies
-        run: |
-          uv sync --locked --all-extras --dev
+        run: uv sync --locked --all-extras --dev
 
       - name: Lint with Ruff
         uses: astral-sh/ruff-action@v3
         with:
-          args: check
-          src: src/formatify
+          args: check src/formatify
+
+      - name: Run tests
+        run: uv run pytest --tb=short --disable-warnings
 
       - name: Build distributions
-        run: |
-          uv run build
+        run: uv run build
+
+      - name: Upload built packages as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-artifacts
+          path: dist/*
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@v1
@@ -38,7 +49,14 @@ jobs:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
 
+      - name: Generate release notes
+        run: |
+          echo "## Changes" > changes.md
+          git log $(git describe --tags --abbrev=0)..HEAD --pretty=format:"- %s" >> changes.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
+          body_path: changes.md
+          files: dist/*

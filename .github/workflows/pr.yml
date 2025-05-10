@@ -11,16 +11,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
 
-      - name: Sync dependencies
+      - name: Sync dependencies (locked)
         run: uv sync --locked --all-extras --dev
 
       - name: Lint with Ruff
         uses: astral-sh/ruff-action@v3
         with:
-          args: check
-          src: src/formatify
+          args: check src/formatify
+
+      - name: Run tests with pytest
+        run: uv run pytest --tb=short --disable-warnings

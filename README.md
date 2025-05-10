@@ -1,114 +1,198 @@
-# formatify
-
-[![PyPI version](https://img.shields.io/pypi/v/formatify.svg)](https://pypi.org/project/formatify) [![CI](https://github.com/PieceWiseProjects/formatify/actions/workflows/pr.yml/badge.svg)](https://github.com/PieceWiseProjects/formatify/actions) [![Release](https://github.com/PieceWiseProjects/formatify/actions/workflows/release.yml/badge.svg)](https://github.com/PieceWiseProjects/formatify/releases) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-
-A small, zero-dependency library to infer and standardize datetime formats from a set of timestamp samples. Perfect for ETL pipelines, log parsing, and any situation where timestamp formats vary or aren’t known in advance.
+# 🕒 formatify
 
 ---
 
-## 📦 Installation
+> 🧠 Auto-detect and standardize messy timestamp formats.
+> Perfect for log parsers, data pipelines, or anyone tired of wrestling with inconsistent datetime strings.
 
-Using **pip**:
+[![PyPI version](https://img.shields.io/pypi/v/formatify.svg)](https://pypi.org/project/formatify)
+[![CI](https://github.com/PieceWiseProjects/formatify/actions/workflows/pr.yml/badge.svg)](https://github.com/PieceWiseProjects/formatify/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-```bash
-pip install formatify
-```
-
-Or with **uv**:
-
-```bash
-uv sync --locked
-```
+[![Downloads](https://static.pepy.tech/badge/formatify)](https://pepy.tech/project/formatify)
+![Python](https://img.shields.io/pypi/pyversions/formatify)
+![Platform](https://img.shields.io/badge/platform-cross--platform-green)
+![Status](https://img.shields.io/badge/status-stable-brightgreen)
 
 ---
 
-## 🚀 Quick Start
+![Demo of formatify in action](Animation.gif)
+
+---
+
+## ⚠️ Problem
+
+Ever pulled in a CSV or log file and found timestamps like this?
+
+```plaintext
+2023-03-01T12:30:45Z, 01/03/2023 12:30, Mar 1 2023 12:30 PM
+```
+
+How do you reliably infer and **standardize** them — especially when:
+
+* formats are mixed?
+* you have no schema?
+* fractional seconds and timezones are involved?
+
+---
+
+## ✅ Solution
+
+`formatify` infers the datetime format(s) from a list of timestamp strings and gives you:
+
+* a valid `strftime` format string per group,
+* component roles (e.g. year, month, day),
+* clean, standardized timestamps,
+* structural grouping when needed.
+
+No dependencies. Works out of the box.
+
+---
+
+## 📄 What This Library Does
+
+Behind the scenes, `formatify` uses:
+
+* **Regex patterns** to split and identify timestamp tokens
+* **Heuristics** to assign roles like `year`, `month`, `hour`, etc.
+* **Frequency analysis** to distinguish stable vs. changing components
+* **ISO 8601 detection** for timezones, 'T' separators, and fractional seconds
+* **Smart fallbacks** for missing delimiters or ambiguous parts
+* **Epoch detection** (10 or 13 digit UNIX timestamps)
+
+It produces:
+
+* one or more `%Y-%m-%dT%H:%M:%SZ`-style format strings
+* lists of cleaned, standardized `YYYY-MM-DD HH:MM:SS` values
+* per-group accuracy and metadata
+
+---
+
+## 🚀 Quick Example
 
 ```python
-from formatify.main import infer_datetime_format_from_samples
+from formatify.main import analyze_heterogeneous_timestamp_formats
 
 samples = [
     "2023-07-15T14:23:05Z",
-    "2023-07-16T15:45:10Z",
-    "2023-07-17T16:00:00Z",
+    "15/07/2023 14:23",
+    "Jul 15, 2023 02:23 PM",
+    "1689433385000"  # epoch in ms
 ]
 
-result = infer_datetime_format_from_samples(samples)
+results = analyze_heterogeneous_timestamp_formats(samples)
 
-print(result["format_string"])
-# -> "%Y-%m-%dT%H:%M:%SZ"
-
-print(result["standardized_timestamps"])
-# -> ["2023-07-15 14:23:05", "2023-07-16 15:45:10", "2023-07-17 16:00:00"]
+for gid, group in results.items():
+    print("Group", gid)
+    print("→ Format:", group["format_string"])
+    print("→ Standardized:", group["standardized_timestamps"][:2])
 ```
 
 ---
 
 ## 🔍 Features
 
-* **Epoch detection**: Recognizes 10- or 13-digit UNIX timestamps.
-* **Mixed formats**: Handles ISO 8601, textual months, custom delimiters, fractional seconds, and time-zones.
-* **Automatic role assignment**: Infers which component is year/month/day/hour/minute/second.
-* **Reconstruction**: Builds a proper `strftime` format string matching your data.
-* **Standardization**: Converts all inputs to a uniform output format (configured in `app.constants`).
-* **Heterogeneous handling**: Splits timestamp lists into groups by component count and analyzes each separately.
+✅ Auto-detect `strftime` format
+✅ Handles ISO 8601, text months, UNIX epoch
+✅ Infers year/month/day/hour/minute roles
+✅ Groups mixed formats automatically
+✅ Timezone-aware
+✅ No dependencies
+✅ Fast and customizable
 
 ---
 
-## 📖 API
+## 🧪 API
 
-### `infer_datetime_format_from_samples(samples: List[str], delimiter_hint: Optional[str] = None, separator_pattern: Optional[Tuple[str, ...]] = None) -> Dict[str, Any]`
+### Main Entry Point
 
-* **samples**: List of raw timestamp strings.
-* **delimiter\_hint**: Force a primary delimiter (e.g., `/` or `-`).
-* **separator\_pattern**: Provide exact separators from a representative sample.
+```python
+analyze_heterogeneous_timestamp_formats(samples: List[str]) -> Dict[int, Dict[str, Any]]
+```
 
-**Returns** a dict with keys:
+Returns a dictionary mapping group IDs to result dictionaries. Each result includes:
 
-* `format_string`: the inferred `strftime` format.
-* `component_roles`: map of component index → role (`year`, `month`, etc.).
-* `change_frequencies`: how often each component changed across samples.
-* `primary_delimiter`: the most common date separator.
-* `iso_features`: flags for ISO traits (`time_separator`, `fractional_seconds`, `timezone_info`).
-* `detected_timezone`: first seen timezone offset or `None`.
-* `accuracy`: fraction of inputs that were successfully parsed.
-* `standardized_timestamps`: list of normalized strings.
+* `format_string`: inferred `strftime` string
+* `standardized_timestamps`: parsed & normalized strings
+* `component_roles`: index → role
+* `change_frequencies`: component variability
+* `iso_features`: flags for ISO 8601 traits
+* `detected_timezone`: parsed offset (if any)
+* `coverage`: fraction of total samples in this group
+* `accuracy`: percent of valid parses in group
 
----
+### Lower-Level Functions
 
-## 🛠 Development
+If you know all your samples have the same format:
 
-```bash
-# 1. Clone the repo
-git clone git@github.com:YourOrg/formatify.git
-cd formatify
-
-# 2. Install uv and dependencies
-uv install
-
-# 3. Lint
-uv run ruff src/formatify
-
-# 4. Run tests
-uv run pytest -q
-
-# 5. Build distributions
-python -m build
+```python
+infer_datetime_format_from_samples(samples: List[str]) -> Dict[str, Any]
 ```
 
 ---
 
-## 🤝 Contributing
+## 🔊 Mixed Format Handling
 
-1. Fork the repo and create a feature branch (`git checkout -b feature/foo`).
-2. Commit your changes (`git commit -am "Add new feature"`).
-3. Run lint & tests locally.
-4. Push to the branch and open a Pull Request.
+`formatify` is designed to handle **real-world timestamp mess**. When your input includes a mix of styles — ISO, slashed, text-months, or epoch — it:
 
-Please follow [Contributor Covenant](https://www.contributor-covenant.org) and our code style (See `.ruff.toml`).
+1. **Groups samples** by structural similarity
+2. **Infers format** per group
+3. **Standardizes timestamps** across each group
+
+This lets you feed in 3 formats or 30, and still get clean, grouped results.
+
+---
+
+## 👁️ Design Notes
+
+Want to know how the internals work? Check out:
+
+* [How Formatify Thinks About Timestamps](docs/design/timestamp-inference.md)
+
+---
+
+## 🔍 Dev Guide
+
+```bash
+# Clone the repo
+git clone https://github.com/PieceWiseProjects/formatify.git
+cd formatify
+
+# Set up environment
+uv pip install -e .[dev,test]
+
+# Lint and format
+uv run ruff src/formatify
+
+# Run tests
+uv run pytest --cov=src/formatify
+
+# Build for release
+uv run python -m build
+```
+
+---
+
+## 🚰 Contributing
+
+We're just getting started — contributions, issues, and ideas welcome!
+
+1. Fork and branch: `git checkout -b feature/my-feature`
+2. Code and test
+3. Lint and push
+4. Open a pull request 💡
+
+Follow our [Contributor Guidelines](https://www.contributor-covenant.org).
 
 ---
 
 ## 📜 License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE) for details.
+
+---
+
+## 🙌 Credits
+
+Built and maintained by [Aalekh Roy](https://github.com/aallekh)
+Part of the [PieceWiseProjects](https://github.com/PieceWiseProjects) initiative.
