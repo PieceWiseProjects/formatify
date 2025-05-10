@@ -1,5 +1,4 @@
-import pytest
-from formatify.main import (
+from formatify_py.main import (
     is_epoch,
     parse_timestamp,
     clean_timestamp,
@@ -14,7 +13,7 @@ from formatify.main import (
     infer_datetime_format_from_samples,
     group_timestamps_by_component_count,
     identify_format_groups,
-    analyze_heterogeneous_timestamp_formats
+    analyze_heterogeneous_timestamp_formats,
 )
 
 
@@ -30,7 +29,7 @@ def test_parse_timestamp_epoch():
 
 
 def test_clean_timestamp():
-    assert clean_timestamp(" '2023-01-01 12:00:00' ") == '2023-01-01 12:00:00'
+    assert clean_timestamp(" '2023-01-01 12:00:00' ") == "2023-01-01 12:00:00"
 
 
 def test_split_tokens_and_separators():
