@@ -5,12 +5,12 @@
 > 🧠 Auto-detect and standardize messy timestamp formats.
 > Perfect for log parsers, data pipelines, or anyone tired of wrestling with inconsistent datetime strings.
 
-[![PyPI version](https://img.shields.io/pypi/v/formatify.svg)](https://pypi.org/project/formatify)
+[![PyPI version](https://img.shields.io/pypi/v/formatify_py.svg)](https://pypi.org/project/formatify_py)
 [![CI](https://github.com/PieceWiseProjects/formatify/actions/workflows/pr.yml/badge.svg)](https://github.com/PieceWiseProjects/formatify/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-[![Downloads](https://static.pepy.tech/badge/formatify)](https://pepy.tech/project/formatify)
-![Python](https://img.shields.io/pypi/pyversions/formatify)
+[![Downloads](https://static.pepy.tech/badge/formatify_py)](https://pepy.tech/project/formatify_py)
+![Python](https://img.shields.io/pypi/pyversions/formatify_py)
 ![Platform](https://img.shields.io/badge/platform-cross--platform-green)
 ![Status](https://img.shields.io/badge/status-stable-brightgreen)
 
@@ -71,7 +71,7 @@ It produces:
 ## 🚀 Quick Example
 
 ```python
-from formatify.main import analyze_heterogeneous_timestamp_formats
+from formatify_py.main import analyze_heterogeneous_timestamp_formats
 
 samples = [
     "2023-07-15T14:23:05Z",
@@ -194,5 +194,5 @@ MIT — see [LICENSE](LICENSE) for details.
 
 ## 🙌 Credits
 
-Built and maintained by [Aalekh Roy](https://github.com/aallekh)
+Built and maintained by [Aalekh Roy](https://github.com/RoyAalekh)
 Part of the [PieceWiseProjects](https://github.com/PieceWiseProjects) initiative.
