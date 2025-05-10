@@ -38,7 +38,7 @@ jobs:
         run: uv pip install build
 
       - name: Build distributions
-        run: uv run build
+        run: uv build
 
       - name: Upload built packages as artifacts
         uses: actions/upload-artifact@v4
