@@ -30,4 +30,4 @@ jobs:
           args: check src/formatify
 
       - name: Run tests with pytest
-        run: uv run pytest --tb=short --disable-warnings --cov=src/formatify --cov-report=term-missing
+        run: uv run pytest --tb=short --disable-warnings

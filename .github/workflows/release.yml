@@ -32,7 +32,7 @@ jobs:
           args: check src/formatify
 
       - name: Run tests
-        run: uv run pytest --tb=short --disable-warnings --cov=src/formatify
+        run: uv run pytest --tb=short --disable-warnings
 
       - name: Build distributions
         run: uv run build
