@@ -147,7 +147,7 @@ This lets you feed in 3 formats or 30, and still get clean, grouped results.
 
 Want to know how the internals work? Check out:
 
-* [How Formatify Thinks About Timestamps](docs/design/timestamp-inference.md)
+* [How Formatify Thinks About Timestamps](docs/design.md)
 
 ---
 
