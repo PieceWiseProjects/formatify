@@ -8,6 +8,11 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: pypi
+
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout code
@@ -29,7 +34,7 @@ jobs:
       - name: Lint with Ruff
         uses: astral-sh/ruff-action@v3
         with:
-          args: check src/formatify
+          args: check src/formatify_py
 
       - name: Run tests
         run: uv run pytest --tb=short --disable-warnings
@@ -46,11 +51,10 @@ jobs:
           name: dist-artifacts
           path: dist/*
 
-      #- name: Publish to PyPI
-      #  uses: pypa/gh-action-pypi-publish@v1
-       # with:
-       #   user: __token__
-        #  password: ${{ secrets.PYPI_API_TOKEN }}
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true  # Skip if the version already exists
 
       - name: Generate release notes
         run: |

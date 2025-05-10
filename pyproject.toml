@@ -1,5 +1,5 @@
 [project]
-name = "formatify"
+name = "formatify_py"
 version = "1.0.0"
 description = "Auto-detect and standardize datetime formats from raw timestamps"
 keywords = ["timestamp", "datetime", "standardization", "parsing"]

@@ -156,16 +156,16 @@ Want to know how the internals work? Check out:
 ```bash
 # Clone the repo
 git clone https://github.com/PieceWiseProjects/formatify.git
-cd formatify
+cd formatify_py
 
 # Set up environment
 uv pip install -e .[dev,test]
 
 # Lint and format
-uv run ruff src/formatify
+uv run ruff src/formatify_py
 
 # Run tests
-uv run pytest --cov=src/formatify
+uv run pytest --cov=src/formatify_py
 
 # Build for release
 uv run python -m build
