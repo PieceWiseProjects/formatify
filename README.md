@@ -1,8 +1,8 @@
-# 🕒 formatify
+# formatify
 
 ---
 
-> 🧠 Auto-detect and standardize messy timestamp formats.
+> Auto-detect and standardize messy timestamp formats.
 > Perfect for log parsers, data pipelines, or anyone tired of wrestling with inconsistent datetime strings.
 
 [![PyPI version](https://img.shields.io/pypi/v/formatify_py.svg)](https://pypi.org/project/formatify_py)
@@ -20,7 +20,7 @@
 
 ---
 
-## ⚠️ Problem
+## Problem
 
 Ever pulled in a CSV or log file and found timestamps like this?
 
@@ -36,7 +36,7 @@ How do you reliably infer and **standardize** them — especially when:
 
 ---
 
-## ✅ Solution
+## Solution
 
 `formatify` infers the datetime format(s) from a list of timestamp strings and gives you:
 
@@ -49,7 +49,7 @@ No dependencies. Works out of the box.
 
 ---
 
-## 📄 What This Library Does
+## What This Library Does
 
 Behind the scenes, `formatify` uses:
 
@@ -68,10 +68,10 @@ It produces:
 
 ---
 
-## 🚀 Quick Example
+## Quick Example
 
 ```python
-from formatify_py.main import analyze_heterogeneous_timestamp_formats
+from formatify_py import analyze_heterogeneous_timestamp_formats
 
 samples = [
     "2023-07-15T14:23:05Z",
@@ -90,19 +90,19 @@ for gid, group in results.items():
 
 ---
 
-## 🔍 Features
+## Features
 
-✅ Auto-detect `strftime` format
-✅ Handles ISO 8601, text months, UNIX epoch
-✅ Infers year/month/day/hour/minute roles
-✅ Groups mixed formats automatically
-✅ Timezone-aware
-✅ No dependencies
-✅ Fast and customizable
+- Auto-detect `strftime` format
+- Handles ISO 8601, text months, UNIX epoch
+- Infers year/month/day/hour/minute roles
+- Groups mixed formats automatically
+- Timezone-aware
+- No dependencies
+- Fast and customizable
 
 ---
 
-## 🧪 API
+## API
 
 ### Main Entry Point
 
@@ -120,6 +120,9 @@ Returns a dictionary mapping group IDs to result dictionaries. Each result inclu
 * `detected_timezone`: parsed offset (if any)
 * `coverage`: fraction of total samples in this group
 * `accuracy`: percent of valid parses in group
+* `primary_delimiter`: most common delimiter used
+* `samples`: original timestamps in this group
+* `group_features`: detected structural features
 
 ### Lower-Level Functions
 
@@ -131,7 +134,7 @@ infer_datetime_format_from_samples(samples: List[str]) -> Dict[str, Any]
 
 ---
 
-## 🔊 Mixed Format Handling
+## Mixed Format Handling
 
 `formatify` is designed to handle **real-world timestamp mess**. When your input includes a mix of styles — ISO, slashed, text-months, or epoch — it:
 
@@ -143,7 +146,7 @@ This lets you feed in 3 formats or 30, and still get clean, grouped results.
 
 ---
 
-## 👁️ Design Notes
+## Design Notes
 
 Want to know how the internals work? Check out:
 
@@ -151,12 +154,12 @@ Want to know how the internals work? Check out:
 
 ---
 
-## 🔍 Dev Guide
+## Dev Guide
 
 ```bash
 # Clone the repo
 git clone https://github.com/PieceWiseProjects/formatify.git
-cd formatify_py
+cd formatify
 
 # Set up environment
 uv pip install -e .[dev,test]
@@ -173,26 +176,26 @@ uv run python -m build
 
 ---
 
-## 🚰 Contributing
+## Contributing
 
 We're just getting started — contributions, issues, and ideas welcome!
 
 1. Fork and branch: `git checkout -b feature/my-feature`
 2. Code and test
 3. Lint and push
-4. Open a pull request 💡
+4. Open a pull request
 
 Follow our [Contributor Guidelines](https://www.contributor-covenant.org).
 
 ---
 
-## 📜 License
+## License
 
 MIT — see [LICENSE](LICENSE) for details.
 
 ---
 
-## 🙌 Credits
+## Credits
 
 Built and maintained by [Aalekh Roy](https://github.com/RoyAalekh)
 Part of the [PieceWiseProjects](https://github.com/PieceWiseProjects) initiative.

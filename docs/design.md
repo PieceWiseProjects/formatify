@@ -4,7 +4,7 @@ Just a quick note on how the core logic of `formatify` works, what design choice
 
 ---
 
-## 🧭 Why This Exists
+## Why This Exists
 
 Parsing timestamps in the wild is messy:
 
@@ -16,7 +16,7 @@ So we built something lean and explicit — especially useful for logs, ETL pipe
 
 ---
 
-## ✅ What We Chose To Do
+## What We Chose To Do
 
 * Use **regex + tokenization** instead of fuzzy parsing
 * Look at **how often parts change** (e.g., days vs. years) to guess roles
@@ -32,7 +32,7 @@ And we return:
 
 ---
 
-## 💡 What We Didn’t Use
+## What We Didn't Use
 
 We intentionally skipped tools like:
 
@@ -42,15 +42,15 @@ We intentionally skipped tools like:
 
 ---
 
-## 📉 Tradeoffs
+## Tradeoffs
 
-👍 Pros:
+Pros:
 
 * Fast
 * Easy to reason about
 * Plays nice with your data pipeline
 
-👎 Cons:
+Cons:
 
 * No locale support (e.g. `1 Mars 2023`)
 * Not built for unstructured natural language
@@ -58,7 +58,7 @@ We intentionally skipped tools like:
 
 ---
 
-## 🧱 How It All Fits Together
+## How It All Fits Together
 
 ```mermaid
 graph TD
@@ -74,7 +74,7 @@ graph TD
 
 ---
 
-## 🧠 TL;DR
+## TL;DR
 
 `formatify` is built to be:
 

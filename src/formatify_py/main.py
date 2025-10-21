@@ -1,159 +1,68 @@
+import logging
 import re
-from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from collections import defaultdict
+from datetime import datetime
 from itertools import permutations
-from typing import Any, DefaultDict, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
-COMMON_DELIMITERS = ["/", "-", ".", " ", ","]
-MONTH_ABBREVIATIONS = {
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-}
-MONTH_FULL_NAMES = {
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-}
-MONTH_REGEX_PATTERN = re.compile(
-    r"\b(?:"
-    + "|".join(sorted(MONTH_ABBREVIATIONS | MONTH_FULL_NAMES, key=len, reverse=True))
-    + r")\b"
+from .constants import (
+    DEFAULT_DATE_DELIMITER,
+    DEFAULT_TIME_DELIMITER,
+    ISO_TIME_SEPARATOR,
+    MONTH_REGEX_PATTERN,
+    SEPARATOR_REGEX,
+    TIMEZONE_REGEX,
 )
-SEPARATOR_REGEX = re.compile(r"[\sT:/\-.]+")
-TIMEZONE_REGEX = re.compile(r"([+-]\d{2}:?\d{2}|Z)$")
-DATETIME_FORMAT_TO_USE_IN_RAW_TABLE = "%Y-%m-%d %H:%M:%S"
+from .exceptions import (
+    InconsistentFormatError,
+    InsufficientDataError,
+)
+from .utils import (
+    calculate_component_change_frequencies,
+    clean_timestamp,
+    detect_iso_8601_features,
+    identify_most_common_delimiter,
+    identify_textual_month_positions,
+    is_epoch,
+    parse_timestamp,
+    split_timestamps_into_components,
+    split_tokens_and_separators,
+)
 
-def is_epoch(ts: str) -> bool:
-    return ts.isdigit() and 10 <= len(ts) <= 13
-
-
-def parse_timestamp(ts: str, fmt: str) -> Optional[str]:
-    if is_epoch(ts):
-        num = int(ts) / (1000 if len(ts) == 13 else 1)
-        try:
-            dt = datetime.fromtimestamp(num, tz=timezone.utc).replace(tzinfo=None)
-            if 1970 <= dt.year <= 2100:
-                return dt.strftime(DATETIME_FORMAT_TO_USE_IN_RAW_TABLE)
-        except (OSError, OverflowError, ValueError):
-            return None
-
-    try:
-        dt = datetime.strptime(ts, fmt)
-        return dt.replace(tzinfo=None).strftime(DATETIME_FORMAT_TO_USE_IN_RAW_TABLE)
-    except ValueError:
-        return None
-
-
-def clean_timestamp(ts: str) -> str:
-    return ts.strip().replace('"', "").replace("'", "").replace("\s+", " ")
-
-
-def split_tokens_and_separators(ts: str) -> Tuple[List[str], List[str]]:
-    tz_match = TIMEZONE_REGEX.search(ts)
-    tz = tz_match.group(1) if tz_match else None
-    core = ts[: tz_match.start()] if tz_match else ts
-    parts = re.split(r"(\d+|[A-Za-z]{2,})", core)
-    tokens, seps = [], []
-    for i in range(1, len(parts), 2):
-        tok, sep = parts[i], parts[i + 1] if i + 1 < len(parts) else ""
-        if tok == "T":
-            if seps:
-                seps[-1] += tok + sep
-            continue
-        tokens.append(tok)
-        seps.append(sep)
-    if tz:
-        tokens.append(tz)
-        seps.append("")
-    return tokens, seps
-
-
-def split_timestamps_into_components(timestamps: List[str]) -> List[List[str]]:
-    result = []
-    for ts in timestamps:
-        tz_match = TIMEZONE_REGEX.search(ts)
-        core = ts[: tz_match.start()] if tz_match else ts
-        comps = SEPARATOR_REGEX.split(core)
-        result.append(comps + ([tz_match.group(1)] if tz_match else []))
-    return result
-
-
-def calculate_component_change_frequencies(tokenized: List[List[str]]) -> List[int]:
-    counts = [0] * len(tokenized[0])
-    for prev, curr in zip(tokenized, tokenized[1:]):
-        for i, (a, b) in enumerate(zip(prev, curr)):
-            if a != b:
-                counts[i] += 1
-    return counts
-
-
-def detect_iso_8601_features(timestamps: List[str]) -> Dict[str, bool]:
-    return {
-        "time_separator": any("T" in ts for ts in timestamps),
-        "fractional_seconds": any(
-            re.search(r":\d{2}\.\d{1,6}", ts) for ts in timestamps
-        ),
-        "timezone_info": any(TIMEZONE_REGEX.search(ts) for ts in timestamps),
-    }
-
-
-def identify_textual_month_positions(timestamps: List[str]) -> Optional[int]:
-    freq: DefaultDict[int, int] = defaultdict(int)
-    for ts in timestamps:
-        for i, comp in enumerate(re.split(SEPARATOR_REGEX, ts)):
-            if MONTH_REGEX_PATTERN.search(comp):
-                freq[i] += 1
-    return max(freq, key=freq.get) if freq else None
+# Set up logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def determine_component_roles(
-    freqs: List[int], tokenized: List[List[str]], timestamps: List[str]
-) -> Dict[int, str]:
+    freqs: list[int], tokenized: list[list[str]], timestamps: list[str]
+) -> dict[int, str]:
     current_year = datetime.now().year
-    roles: Dict[int, str] = {}
+    roles: dict[int, str] = {}
 
-    def get_col(idx: int) -> List[str]:
+    def get_col(idx: int) -> list[str]:
         return [row[idx] for row in tokenized]
 
-    def valid_year(vals: List[str]) -> bool:
+    def valid_year(vals: list[str]) -> bool:
         try:
             years = [int(v) for v in vals]
             return all(0 <= y <= 99 or 1900 <= y <= current_year + 1 for y in years)
         except ValueError:
             return False
 
-    def valid_day(vals: List[str]) -> bool:
+    def valid_day(vals: list[str]) -> bool:
         try:
             return all(1 <= int(re.sub(r"\D", "", v)) <= 31 for v in vals if v)
         except ValueError:
             return False
 
-    def valid_hour(vals: List[str]) -> bool:
+    def valid_hour(vals: list[str]) -> bool:
         try:
             return all(0 <= int(v) <= 23 for v in vals)
         except ValueError:
             return False
 
-    def valid_min_sec(vals: List[str]) -> bool:
+    def valid_min_sec(vals: list[str]) -> bool:
         try:
             nums = [int(v) for v in vals]
             return all(0 <= n <= 59 for n in nums)
@@ -188,8 +97,8 @@ def determine_component_roles(
         date_idxs.remove(m)
 
     # Day/year fallback
-    if "year" in roles:
-        if "month" in roles and date_idxs:
+    if "year" in roles.values():
+        if "month" in roles.values() and date_idxs:
             roles[date_idxs[0]] = "day"
         elif len(date_idxs) > 1:
             d = max(date_idxs, key=lambda i: freqs[i])
@@ -202,14 +111,17 @@ def determine_component_roles(
         if len(date_idxs) == 1:
             roles[date_idxs[0]] = "day"
         elif len(date_idxs) > 1:
-            best, combo = -1, None
+            best: float = -1.0
+            combo: Optional[tuple[int, int]] = None
             for y, d in permutations(date_idxs, 2):
                 if valid_year(get_col(y)) and valid_day(get_col(d)):
                     y_rate = freqs[y] / len(tokenized)
                     d_rate = freqs[d] / len(tokenized)
-                    score = 3 if y_rate < 0.05 else 1 if y_rate < 0.1 else 0
-                    score += 2 if d_rate > 0.9 else 1 if d_rate > 0.5 else 0
-                    score += (d_rate - y_rate) * 10
+                    score: float = (
+                        3.0 if y_rate < 0.05 else 1.0 if y_rate < 0.1 else 0.0
+                    )
+                    score += 2.0 if d_rate > 0.9 else 1.0 if d_rate > 0.5 else 0.0
+                    score += (d_rate - y_rate) * 10.0
                     if score > best:
                         best, combo = score, (y, d)
             if combo:
@@ -240,12 +152,12 @@ def determine_component_roles(
 
 
 def generate_format_string_from_components(
-    roles: Dict[int, str],
-    tokenized: List[List[str]],
-    date_delim: str = "/",
-    time_delim: str = ":",
-    iso_feats: Optional[Dict[str, bool]] = None,
-    separators: Optional[List[str]] = None,
+    roles: dict[int, str],
+    tokenized: list[list[str]],
+    date_delim: str = DEFAULT_DATE_DELIMITER,
+    time_delim: str = DEFAULT_TIME_DELIMITER,
+    iso_feats: Optional[dict[str, bool]] = None,
+    separators: Optional[list[str]] = None,
 ) -> str:
     iso_feats = iso_feats or {}
     directives = {
@@ -288,7 +200,7 @@ def generate_format_string_from_components(
         if r in ("hour", "minute", "second")
     ]
     if time_parts:
-        sep = "T" if iso_feats.get("time_separator") else " "
+        sep = ISO_TIME_SEPARATOR if iso_feats.get("time_separator") else " "
         fmt += sep + time_delim.join(time_parts)
         if iso_feats.get("fractional_seconds"):
             fmt += ".%f"
@@ -297,16 +209,41 @@ def generate_format_string_from_components(
     return fmt
 
 
-def identify_most_common_delimiter(timestamps: List[str]) -> str:
-    freq = Counter(d for ts in timestamps for d in COMMON_DELIMITERS if d in ts)
-    return freq.most_common(1)[0][0] if freq else "/"
-
-
 def infer_datetime_format_from_samples(
-    timestamps: List[str],
+    timestamps: list[str],
     delimiter_hint: Optional[str] = None,
-    separator_pattern: Optional[Tuple[str, ...]] = None,
-) -> Dict[str, Any]:
+    separator_pattern: Optional[tuple[str, ...]] = None,
+) -> dict[str, Any]:
+    """Infer datetime format from samples with consistent structure.
+
+    This function analyzes timestamps that are assumed to have the same format
+    and infers the appropriate strftime format string.
+
+    Args:
+        timestamps: List of timestamp strings with consistent format.
+        delimiter_hint: Optional hint for the primary delimiter.
+        separator_pattern: Optional tuple of separator patterns.
+
+    Returns:
+        Dictionary containing:
+        - format_string: Inferred strftime format string
+        - component_roles: Mapping of component indices to roles
+        - change_frequencies: Variability of each component
+        - primary_delimiter: Primary delimiter used
+        - iso_features: Detected ISO 8601 features
+        - detected_timezone: Detected timezone if present
+        - accuracy: Fraction of successfully parsed timestamps
+        - standardized_timestamps: List of normalized timestamps
+
+    Raises:
+        ValueError: If timestamps have inconsistent component counts.
+
+    Example:
+        >>> samples = ["2023-07-15T14:23:05Z", "2023-07-16T15:24:06Z"]
+        >>> result = infer_datetime_format_from_samples(samples)
+        >>> result['format_string']
+        '%Y-%m-%dT%H:%M:%SZ'
+    """
     if all(is_epoch(ts) for ts in timestamps):
         std = [parse_timestamp(ts, "%s") for ts in timestamps]
         return {
@@ -321,8 +258,9 @@ def infer_datetime_format_from_samples(
 
     cleaned = [clean_timestamp(ts) for ts in timestamps]
     tokenized = split_timestamps_into_components(cleaned)
-    if len({len(t) for t in tokenized}) != 1:
-        raise ValueError("Inconsistent component counts.")
+    component_counts = {len(t) for t in tokenized}
+    if len(component_counts) != 1:
+        raise InconsistentFormatError(component_counts)
 
     hint = delimiter_hint or identify_most_common_delimiter(cleaned)
     freqs = calculate_component_change_frequencies(tokenized)
@@ -337,13 +275,17 @@ def infer_datetime_format_from_samples(
             roles,
             [toks],
             date_delim=hint,
-            time_delim=":",
+            time_delim=DEFAULT_TIME_DELIMITER,
             iso_feats=iso_feats,
             separators=seps,
         )
     else:
         fmt = generate_format_string_from_components(
-            roles, tokenized, date_delim=hint, time_delim=":", iso_feats=iso_feats
+            roles,
+            tokenized,
+            date_delim=hint,
+            time_delim=DEFAULT_TIME_DELIMITER,
+            iso_feats=iso_feats,
         )
 
     std = [parse_timestamp(ts, fmt) for ts in cleaned]
@@ -359,8 +301,8 @@ def infer_datetime_format_from_samples(
     }
 
 
-def group_timestamps_by_component_count(timestamps: List[str]) -> Dict[int, List[str]]:
-    groups: DefaultDict[int, List[str]] = defaultdict(list)
+def group_timestamps_by_component_count(timestamps: list[str]) -> dict[int, list[str]]:
+    groups: defaultdict[int, list[str]] = defaultdict(list)
     for ts in timestamps:
         count = len(SEPARATOR_REGEX.split(clean_timestamp(ts)))
         groups[count].append(clean_timestamp(ts))
@@ -368,12 +310,12 @@ def group_timestamps_by_component_count(timestamps: List[str]) -> Dict[int, List
 
 
 def identify_format_groups(
-    timestamps: List[str],
-) -> Dict[int, Tuple[List[str], Dict[str, Any]]]:
+    timestamps: list[str],
+) -> dict[int, tuple[list[str], dict[str, Any]]]:
     grouped = group_timestamps_by_component_count(timestamps)
     result, gid = {}, 0
     for samples in grouped.values():
-        buckets: DefaultDict[Tuple, List[str]] = defaultdict(list)
+        buckets: defaultdict[tuple, list[str]] = defaultdict(list)
         for ts in samples:
             toks, seps = split_tokens_and_separators(ts)
             feats = {
@@ -390,8 +332,58 @@ def identify_format_groups(
 
 
 def analyze_heterogeneous_timestamp_formats(
-    timestamps: List[str], delimiter_hint: Optional[str] = None
-) -> Dict[int, Dict[str, Any]]:
+    timestamps: list[str], delimiter_hint: Optional[str] = None
+) -> dict[int, dict[str, Any]]:
+    """Analyze and standardize heterogeneous timestamp formats.
+
+    This is the main entry point for the formatify library. It takes a list of
+    timestamp strings that may be in different formats and automatically groups
+    them by format, infers the format string for each group, and returns
+    standardized timestamps.
+
+    Args:
+        timestamps: List of timestamp strings to analyze.
+        delimiter_hint: Optional hint for the primary delimiter to use.
+
+    Returns:
+        Dictionary mapping group IDs to analysis results. Each result contains:
+        - format_string: Inferred strftime format string
+        - standardized_timestamps: List of normalized timestamp strings
+        - component_roles: Mapping of component indices to their roles
+        - change_frequencies: How often each component changes
+        - iso_features: Detected ISO 8601 features
+        - detected_timezone: Detected timezone if present
+        - accuracy: Fraction of successfully parsed timestamps
+        - coverage: Fraction of input timestamps in this group
+        - samples: Original timestamps in this group
+        - group_features: Detected structural features
+
+    Raises:
+        InsufficientDataError: If no timestamps are provided.
+        InconsistentFormatError: If timestamps have inconsistent component counts
+            within a group.
+        FormatifyError: For other analysis errors.
+
+    Example:
+        >>> samples = [
+        ...     "2023-07-15T14:23:05Z",
+        ...     "15/07/2023 14:23",
+        ...     "Jul 15, 2023 02:23 PM",
+        ...     "1689433385000"  # epoch in ms
+        ... ]
+        >>> results = analyze_heterogeneous_timestamp_formats(samples)
+        >>> for gid, group in results.items():
+        ...     print(f"Group {gid}: {group['format_string']}")
+        Group 0: %Y-%m-%dT%H:%M:%SZ
+        Group 1: %d/%m/%Y %H:%M
+        Group 2: %b %d, %Y %I:%M %p
+        Group 3: %s
+    """
+    if not timestamps:
+        raise InsufficientDataError(0, 1, "No timestamps provided for analysis")
+
+    logger.info(f"Analyzing {len(timestamps)} timestamps for format detection")
+
     if all(is_epoch(ts) for ts in timestamps):
         std = [parse_timestamp(ts, "%s") for ts in timestamps]
         return {
@@ -407,7 +399,7 @@ def analyze_heterogeneous_timestamp_formats(
         }
 
     groups = identify_format_groups(timestamps)
-    results: Dict[int, Dict[str, Any]] = {}
+    results: dict[int, dict[str, Any]] = {}
     for gid, (samples, feats) in groups.items():
         try:
             analysis = infer_datetime_format_from_samples(

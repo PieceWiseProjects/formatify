@@ -179,5 +179,56 @@ __pycache__
 *.egg-info
 aws
 *.egg
-.iml
+*.iml
+
+# Project-specific test files
+test_*.py
+temp_*.py
+example_*.py
+
+# Animation and media files (keep Animation.gif but exclude others)
+*.mp4
+*.mov
+*.avi
+
+# Temporary and backup files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# macOS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# PyCharm (uncommented for safety)
+.idea/
+
+# Additional coverage and linting
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage*
+
+# Build and dist artifacts
+build/
+dist/
+*.egg-info/
+
+# Documentation build
+docs/_build/
+docs/build/
 
